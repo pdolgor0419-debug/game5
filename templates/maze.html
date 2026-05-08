@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Төөрдөг Байшин</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="container">
+        <header class="game-header">
+            <a href="/" class="back-btn">← Буцах</a>
+            <h1>🏃 Төөрдөг Байшин</h1>
+            <p>Байшингаас гарч ирээрэй!</p>
+        </header>
+
+        <div class="game-container">
+            <div class="game-card-large">
+                <div class="move-counter">
+                    Алхам: <span id="moveCount">0</span>
+                </div>
+
+                <div class="maze-display" id="mazeDisplay">
+                </div>
+
+                <div class="controls">
+                    <button onclick="move('up')" class="arrow-btn">⬆️</button>
+                    <div>
+                        <button onclick="move('left')" class="arrow-btn">⬅️</button>
+                        <button onclick="move('down')" class="arrow-btn">⬇️</button>
+                        <button onclick="move('right')" class="arrow-btn">➡️</button>
+                    </div>
+                </div>
+
+                <div class="message" id="message" style="display: none;">
+                </div>
+
+                <button onclick="resetMaze()" class="btn-secondary" id="resetBtn">
+                    Эхлэх
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .maze-display {
+            display: grid;
+            grid-template-columns: repeat(10, 40px);
+            gap: 2px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #1a1f3a;
+            border-radius: 10px;
+            width: fit-content;
+        }
+
+        .maze-cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            border-radius: 5px;
+        }
+
+        .wall {
+            background: #2d3561;
+            color: #666;
+        }
+
+        .path {
+            background: #364558;
+        }
+
+        .player {
+            background: #4dabf7;
+            font-weight: bold;
+        }
+
+        .end {
+            background: #ffd43b;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .controls div {
+            display: flex;
+            gap: 10px;
+        }
+
+        .arrow-btn {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            background: #4dabf7;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .arrow-btn:hover {
+            background: #339af0;
+            transform: scale(1.1);
+        }
+
+        .arrow-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+
+    <script>
+        function loadMaze() {
+            fetch('/api/maze/get_state')
+            .then(response => response.json())
+            .then(data => {
+                renderMaze(data.maze);
+                document.getElementById('moveCount').textContent = data.moves;
+            });
+        }
+
+        function renderMaze(maze) {
+            const mazeDisplay = document.getElementById('mazeDisplay');
+            mazeDisplay.innerHTML = '';
+            
+            maze.forEach(row => {
+                row.forEach(cell => {
+                    const cellDiv = document.createElement('div');
+                    cellDiv.className = 'maze-cell';
+                    
+                    if (cell === '#') {
+                        cellDiv.className += ' wall';
+                        cellDiv.textContent = '█';
+                    } else if (cell === 'P') {
+                        cellDiv.className += ' player';
+                        cellDiv.textContent = '🚶';
+                    } else if (cell === 'E') {
+                        cellDiv.className += ' end';
+                        cellDiv.textContent = '🏁';
+                    } else {
+                        cellDiv.className += ' path';
+                        cellDiv.textContent = ' ';
+                    }
+                    
+                    mazeDisplay.appendChild(cellDiv);
+                });
+            });
+        }
+
+        function move(direction) {
+            fetch('/api/maze/move', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ direction: direction })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'win') {
+                    document.getElementById('message').style.display = 'block';
+                    document.getElementById('message').innerHTML = `🎉 Та гаралт! <br> Нийт ${data.moves} алхам эргүүлэв!`;
+                    document.getElementById('message').style.background = '#51cf66';
+                    disableControls();
+                } else if (data.status === 'moving') {
+                    loadMaze();
+                } else if (data.status === 'blocked') {
+                    document.getElementById('message').style.display = 'block';
+                    document.getElementById('message').textContent = '⛔ Дам гаж чадахгүй';
+                    document.getElementById('message').style.background = '#ff6b6b';
+                    setTimeout(() => {
+                        document.getElementById('message').style.display = 'none';
+                    }, 1000);
+                }
+            });
+        }
+
+        function resetMaze() {
+            fetch('/api/maze/reset', { method: 'POST' })
+            .then(() => {
+                loadMaze();
+                document.getElementById('message').style.display = 'none';
+                enableControls();
+            });
+        }
+
+        function disableControls() {
+            document.querySelectorAll('.arrow-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+            });
+        }
+
+        function enableControls() {
+            document.querySelectorAll('.arrow-btn').forEach(btn => {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            });
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowUp') { move('up'); e.preventDefault(); }
+            if (e.key === 'ArrowDown') { move('down'); e.preventDefault(); }
+            if (e.key === 'ArrowLeft') { move('left'); e.preventDefault(); }
+            if (e.key === 'ArrowRight') { move('right'); e.preventDefault(); }
+        });
+
+        loadMaze();
+    </script>
+</body>
+</html>

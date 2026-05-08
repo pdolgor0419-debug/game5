@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тоглоомын Ажлын Өрөө</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="container">
+        <header class="header">
+            <h1>🎮 Тоглоомын Ажлын Өрөө</h1>
+            <p>Сонирхолтой 5 тоглоомоос сонго</p>
+        </header>
+        
+        <div class="games-grid">
+            <a href="/game/guess_number" class="game-card">
+                <div class="game-icon">🎯</div>
+                <h3>Санасан Тоог Таах</h3>
+                <p>1-100 хооронд санасан тоог таадаж хар!</p>
+            </a>
+            
+            <a href="/game/rock_paper_scissors" class="game-card">
+                <div class="game-icon">✂️</div>
+                <h3>Хайч, Чулуу, Даавуу</h3>
+                <p>Компьютертэй тулаараа!</p>
+            </a>
+            
+            <a href="/game/image_guess" class="game-card">
+                <div class="game-icon">🖼️</div>
+                <h3>Зураг Таах</h3>
+                <p>Эмодзи дээрх амьтнаас таадаж хар!</p>
+            </a>
+            
+            <a href="/game/fibonacci" class="game-card">
+                <div class="game-icon">🔢</div>
+                <h3>Фибоначчигийн Таавар</h3>
+                <p>Дарааллын алга болсон тоог хай!</p>
+            </a>
+            
+            <a href="/game/maze" class="game-card">
+                <div class="game-icon">🏃</div>
+                <h3>Төөрдөг Байшин</h3>
+                <p>Байшингаас гарч ирээрэй!</p>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

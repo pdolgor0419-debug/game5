@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фибоначчигийн Таавар</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="container">
+        <header class="game-header">
+            <a href="/" class="back-btn">← Буцах</a>
+            <h1>🔢 Фибоначчигийн Таавар</h1>
+            <p>Дарааллын алга болсон тоог хайж оруулаарай!</p>
+        </header>
+
+        <div class="game-container">
+            <div class="game-card-large">
+                <div class="score-display">
+                    <h2>Оноо: <span id="score">0</span></h2>
+                </div>
+
+                <div class="sequence-display" id="sequenceDisplay">
+                    1, 1, 2, 3, 5
+                </div>
+
+                <div class="input-group">
+                    <input type="number" id="fibAnswer" placeholder="Алга болсон тоог оруулаарай">
+                    <button onclick="submitAnswer()" class="btn-primary">Оруулах</button>
+                </div>
+
+                <div class="result-message" id="resultMessage" style="display: none;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function loadQuestion() {
+            fetch('/api/fibonacci/get_question')
+            .then(response => response.json())
+            .then(data => {
+                const sequenceText = data.question.map(num => num === '?' ? '<span class="missing">?</span>' : num).join(', ');
+                document.getElementById('sequenceDisplay').innerHTML = sequenceText;
+                document.getElementById('score').textContent = data.score;
+                document.getElementById('resultMessage').style.display = 'none';
+                document.getElementById('fibAnswer').value = '';
+            });
+        }
+
+        function submitAnswer() {
+            const answer = document.getElementById('fibAnswer').value.trim();
+            const resultMessage = document.getElementById('resultMessage');
+
+            if (!answer) {
+                alert('Тоо оруулаарай!');
+                return;
+            }
+
+            fetch('/api/fibonacci/answer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ answer: answer })
+            })
+            .then(response => response.json())
+            .then(data => {
+                resultMessage.style.display = 'block';
+
+                if (data.result === 'correct') {
+                    resultMessage.textContent = '🎉 Зөв! +1 оноо';
+                    resultMessage.style.background = '#51cf66';
+                    setTimeout(loadQuestion, 1500);
+                } else if (data.result === 'wrong') {
+                    resultMessage.textContent = `❌ Буруу. Зөв хариулт: ${data.correct}`;
+                    resultMessage.style.background = '#ff6b6b';
+                    setTimeout(loadQuestion, 2000);
+                } else {
+                    resultMessage.textContent = '⚠️ Буруу оролдоо';
+                    resultMessage.style.background = '#ffa94d';
+                }
+            });
+        }
+
+        document.getElementById('fibAnswer').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') submitAnswer();
+        });
+
+        loadQuestion();
+    </script>
+</body>
+</html>

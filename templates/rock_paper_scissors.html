@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Хайч, Чулуу, Даавуу</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="container">
+        <header class="game-header">
+            <a href="/" class="back-btn">← Буцах</a>
+            <h1>✂️ Хайч, Чулуу, Даавуу</h1>
+            <p>Компьютертэй тулаараа!</p>
+        </header>
+
+        <div class="game-container">
+            <div class="game-card-large">
+                <div class="score-board">
+                    <div class="score">
+                        <h3>Чи</h3>
+                        <p id="playerScore">0</p>
+                    </div>
+                    <div class="score">
+                        <h3>Компьютер</h3>
+                        <p id="computerScore">0</p>
+                    </div>
+                </div>
+
+                <div class="choices">
+                    <button onclick="play('Чулуу')" class="choice-btn">🪨 Чулуу</button>
+                    <button onclick="play('Даавуу')" class="choice-btn">📄 Даавуу</button>
+                    <button onclick="play('Хайч')" class="choice-btn">✂️ Хайч</button>
+                </div>
+
+                <div class="result-display" id="resultDisplay">
+                    Сонго хийгээрэй!
+                </div>
+
+                <div class="vs-display" id="vsDisplay" style="display: none;">
+                    <div class="vs-choice">
+                        <p id="playerChoice"></p>
+                        <span>VS</span>
+                        <p id="computerChoice"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function play(choice) {
+            fetch('/api/rock_paper_scissors/play', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ choice: choice })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDisplay = document.getElementById('resultDisplay');
+                const vsDisplay = document.getElementById('vsDisplay');
+                
+                document.getElementById('playerChoice').textContent = data.player_choice;
+                document.getElementById('computerChoice').textContent = data.computer_choice;
+                document.getElementById('playerScore').textContent = data.scores.player;
+                document.getElementById('computerScore').textContent = data.scores.computer;
+                
+                if (data.result === 'ялалт') {
+                    resultDisplay.textContent = '🎉 Та ялалт!';
+                    resultDisplay.style.background = '#51cf66';
+                } else if (data.result === 'ялагдал') {
+                    resultDisplay.textContent = '😢 Та ялагдал';
+                    resultDisplay.style.background = '#ff6b6b';
+                } else {
+                    resultDisplay.textContent = '🤝 Тэнцсэн!';
+                    resultDisplay.style.background = '#4dabf7';
+                }
+                
+                vsDisplay.style.display = 'block';
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Санасан Тоог Таах</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="container">
+        <header class="game-header">
+            <a href="/" class="back-btn">← Буцах</a>
+            <h1>🎯 Санасан Тоог Таах</h1>
+            <p>1-100 хооронд санасан тоог таадаж хар!</p>
+        </header>
+
+        <div class="game-container">
+            <div class="game-card-large">
+                <div class="game-info">
+                    <div class="hint-box" id="hintBox">
+                        Тоог оруулаарай...
+                    </div>
+                    <div class="attempts" id="attempts">
+                        Оролдлого: <span>0</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <input type="number" id="numberInput" min="1" max="100" placeholder="1-100 хооронд тоог оруулаарай">
+                    <button onclick="guessNumber()" class="btn-primary">Таа</button>
+                </div>
+
+                <button onclick="resetGame()" class="btn-secondary">Эхлэх</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let attemptCount = 0;
+
+        function guessNumber() {
+            const number = parseInt(document.getElementById('numberInput').value);
+            const hintBox = document.getElementById('hintBox');
+            const attemptsDisplay = document.getElementById('attempts').querySelector('span');
+
+            if (!number || number < 1 || number > 100) {
+                hintBox.textContent = '⚠️ 1-100 хооронд тоо оруулаарай!';
+                hintBox.style.background = '#ff6b6b';
+                return;
+            }
+
+            fetch('/api/guess_number/guess', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ number: number })
+            })
+            .then(response => response.json())
+            .then(data => {
+                attemptCount++;
+                attemptsDisplay.textContent = attemptCount;
+                
+                if (data.result === 'win') {
+                    hintBox.textContent = '🎉 ' + data.message;
+                    hintBox.style.background = '#51cf66';
+                    document.getElementById('numberInput').disabled = true;
+                } else if (data.result === 'higher') {
+                    hintBox.textContent = '⬆️ ' + data.message;
+                    hintBox.style.background = '#4dabf7';
+                } else {
+                    hintBox.textContent = '⬇️ ' + data.message;
+                    hintBox.style.background = '#ffa94d';
+                }
+                
+                document.getElementById('numberInput').value = '';
+            });
+        }
+
+        function resetGame() {
+            fetch('/api/guess_number/reset', { method: 'POST' })
+            .then(() => {
+                attemptCount = 0;
+                document.getElementById('attempts').querySelector('span').textContent = '0';
+                document.getElementById('hintBox').textContent = 'Тоог оруулаарай...';
+                document.getElementById('hintBox').style.background = '#364558';
+                document.getElementById('numberInput').disabled = false;
+                document.getElementById('numberInput').value = '';
+            });
+        }
+
+        document.getElementById('numberInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') guessNumber();
+        });
+    </script>
+</body>
+</html>

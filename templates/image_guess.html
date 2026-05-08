@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Зураг Таах</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="container">
+        <header class="game-header">
+            <a href="/" class="back-btn">← Буцах</a>
+            <h1>🖼️ Зураг Таах</h1>
+            <p>Эмодзи дээрх амьтнаас таадаж хар!</p>
+        </header>
+
+        <div class="game-container">
+            <div class="game-card-large">
+                <div class="emoji-display" id="emojiDisplay">
+                    🐶
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="guessInput" placeholder="Амьтны нэрийг оруулаарай" autocomplete="off">
+                    <button onclick="makeGuess()" class="btn-primary">Таа</button>
+                </div>
+
+                <div class="attempt-info" id="attemptInfo">
+                    Оролдлого: 0/3
+                </div>
+
+                <div class="result-message" id="resultMessage" style="display: none;">
+                </div>
+
+                <button onclick="nextRound()" class="btn-secondary" id="nextBtn" style="display: none;">
+                    Дараачин тасалбар
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let attempts = 0;
+
+        function loadEmoji() {
+            fetch('/api/image_guess/get_emoji')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('emojiDisplay').textContent = data.emoji;
+            });
+        }
+
+        function makeGuess() {
+            const guess = document.getElementById('guessInput').value.trim();
+            const resultMessage = document.getElementById('resultMessage');
+
+            if (!guess) {
+                alert('Нэр оруулаарай!');
+                return;
+            }
+
+            fetch('/api/image_guess/guess', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ answer: guess })
+            })
+            .then(response => response.json())
+            .then(data => {
+                attempts++;
+                document.getElementById('attemptInfo').textContent = `Оролдлого: ${attempts}/3`;
+                resultMessage.style.display = 'block';
+
+                if (data.result === 'win') {
+                    resultMessage.textContent = '🎉 ' + data.message;
+                    resultMessage.style.background = '#51cf66';
+                    document.getElementById('nextBtn').style.display = 'block';
+                    document.getElementById('guessInput').disabled = true;
+                } else if (data.result === 'lose') {
+                    resultMessage.textContent = '❌ ' + data.message;
+                    resultMessage.style.background = '#ff6b6b';
+                    document.getElementById('nextBtn').style.display = 'block';
+                    document.getElementById('guessInput').disabled = true;
+                } else {
+                    resultMessage.textContent = data.message;
+                    resultMessage.style.background = '#ffa94d';
+                }
+                
+                document.getElementById('guessInput').value = '';
+            });
+        }
+
+        function nextRound() {
+            attempts = 0;
+            fetch('/api/image_guess/new_round', { method: 'POST' })
+            .then(() => {
+                loadEmoji();
+                document.getElementById('attemptInfo').textContent = 'Оролдлого: 0/3';
+                document.getElementById('resultMessage').style.display = 'none';
+                document.getElementById('nextBtn').style.display = 'none';
+                document.getElementById('guessInput').disabled = false;
+                document.getElementById('guessInput').value = '';
+            });
+        }
+
+        document.getElementById('guessInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') makeGuess();
+        });
+
+        loadEmoji();
+    </script>
+</body>
+</html>
